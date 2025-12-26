@@ -1,7 +1,7 @@
 import Header from "./components/Header";
 import Trailer from "./components/Trailer";
 import PopularMovieContainer from "./components/PopularMovieContainer";
-import Footer from "./components/footer";
+import Footer from "./components/Footer";
 import MoviesAndShow from "./components/MoviesAndShow";
 
 function MainPage() {
