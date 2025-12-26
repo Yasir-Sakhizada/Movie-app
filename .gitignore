@@ -24,18 +24,4 @@ dist-ssr
 *.sw?
 
 
-# dependencies
-node_modules/
 
-# build output
-build/
-
-# environment variables
-.env
-
-# OS or editor files
-.DS_Store
-*.log
-
-# optional cache folders
-.cache/
