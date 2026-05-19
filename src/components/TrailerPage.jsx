@@ -3,6 +3,12 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useWatchlistContext } from "../context/WatchlistContext";
 
+const SERVERS = [
+  { name: "Server 1", movie: (id) => `https://vidsrc.to/embed/movie/${id}`, tv: (id) => `https://vidsrc.to/embed/tv/${id}` },
+  { name: "Server 2", movie: (id) => `https://vidsrc.me/embed/movie?tmdb=${id}`, tv: (id) => `https://vidsrc.me/embed/tv?tmdb=${id}` },
+  { name: "Server 3", movie: (id) => `https://superembed.stream/embed/tmdb/movie/${id}`, tv: (id) => `https://superembed.stream/embed/tmdb/tv/${id}` },
+];
+
 const API_KEY = import.meta.env.VITE_TMDB_KEY;
 
 export default function TrailerPage() {
@@ -15,11 +21,15 @@ export default function TrailerPage() {
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showVideo, setShowVideo] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [activeServer, setActiveServer] = useState(0);
   const { toggle, isInList } = useWatchlistContext();
 
   useEffect(() => {
     setLoading(true);
     setShowVideo(false);
+    setShowPlayer(false);
+    setActiveServer(0);
     window.scrollTo({ top: 0, behavior: "instant" });
 
     const base = `https://api.themoviedb.org/3/${type}/${id}`;
@@ -108,15 +118,15 @@ export default function TrailerPage() {
             {movie.genres?.map((g) => <span key={g.id}>{g.name}</span>)}
           </div>
           <div className="hero-actions">
-            {videoKey ? (
-              <button className="watch-btn" onClick={() => setShowVideo(true)}>
-                <i className="bx bx-right-arrow"></i>
-                Watch Trailer
+            <button className="watch-btn" onClick={() => { setShowPlayer(true); setTimeout(() => document.getElementById("player-section")?.scrollIntoView({ behavior: "smooth" }), 100); }}>
+              <i className="bx bx-play-circle"></i>
+              Watch Now
+            </button>
+            {videoKey && (
+              <button className="bookmark-btn" onClick={() => setShowVideo(true)}>
+                <i className="bx bx-film"></i>
+                Trailer
               </button>
-            ) : (
-              <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-                <i className="bx bx-info-circle"></i> No trailer available
-              </span>
             )}
             <button
               className={`bookmark-btn ${isInList(movie.id) ? "bookmarked" : ""}`}
@@ -160,7 +170,75 @@ export default function TrailerPage() {
         </motion.div>
       )}
 
-      {/* Overview */}
+      {/* ── Full Movie Player ── */}
+      {showPlayer && (
+        <motion.div
+          id="player-section"
+          className="about-movie container"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", letterSpacing: "0.05em", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ display: "inline-block", width: "3px", height: "1.2em", background: "var(--red)", borderRadius: "2px", boxShadow: "0 0 10px var(--red-glow)", flexShrink: 0 }}></span>
+            Watch {title}
+          </h2>
+
+          {/* Server switcher */}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "1rem", flexWrap: "wrap" }}>
+            {SERVERS.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveServer(i)}
+                style={{
+                  padding: "7px 18px",
+                  borderRadius: "3px",
+                  border: `1px solid ${activeServer === i ? "var(--red)" : "var(--border)"}`,
+                  background: activeServer === i ? "var(--red)" : "transparent",
+                  color: activeServer === i ? "#fff" : "var(--muted)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "0.8rem",
+                  letterSpacing: "0.06em",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  boxShadow: activeServer === i ? "0 4px 16px var(--red-glow)" : "none",
+                }}
+              >
+                {s.name}
+              </button>
+            ))}
+            <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "var(--muted)", alignSelf: "center" }}>
+              If one server fails, try another
+            </span>
+          </div>
+
+          {/* Player iframe */}
+          <div style={{
+            position: "relative",
+            width: "100%",
+            borderRadius: "8px",
+            overflow: "hidden",
+            background: "#000",
+            border: "1px solid var(--border)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+          }}>
+            <iframe
+              key={`${activeServer}-${id}`}
+              src={type === "movie"
+                ? SERVERS[activeServer].movie(id)
+                : SERVERS[activeServer].tv(id)}
+              style={{ width: "100%", aspectRatio: "16/9", border: "none", display: "block" }}
+              allowFullScreen
+              allow="autoplay; fullscreen"
+              title={`Watch ${title}`}
+            />
+          </div>
+
+          <p style={{ marginTop: "10px", fontSize: "0.75rem", color: "var(--muted)", textAlign: "center" }}>
+            Streams are provided by third-party sources. If a stream doesn't load, switch servers.
+          </p>
+        </motion.div>
+      )}
       {movie.overview && (
         <motion.div
           className="about-movie container"
